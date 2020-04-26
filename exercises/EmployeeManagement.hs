@@ -9,6 +9,7 @@ module EmployeeManagement where
 import Shared
 import Squeal.PostgreSQL
 import Data.Int (Int64)
+import Data.Text (pack)
 
 type instance Columns "departments" =
   '[ "code" ::: 'Def :=> 'NotNull 'PGint8
@@ -192,3 +193,58 @@ ex15 = with (q `as` #q)
         & orderBy [Asc $ #d ! #budget]
         & offset 1
         & limit 1)
+
+-- | 16. Add a new department called "Quality Assurance", with a budget of $40,000 and departmental
+-- code 11. Add an employee called "Mary Moore" in that department, with SSN 847-21-9811.
+ex16 :: Manipulation '[] DB '[] '[]
+ex16 = with (qa `as` #qa)
+  (insertInto #employees
+    (Subquery (select_ (inline (847219811 :: Int64) `as` #ssn
+                     :* inline "Mary" `as` #name
+                     :* inline "Moore" `as` #last_name
+                     :* #qa ! #code `as` #department) (from (common #qa)))) OnConflictDoRaise (Returning_ Nil))
+  where
+    qa = insertInto #departments
+      (Values_
+        (Set (inline (11 :: Int64)) `as` #code
+      :* Set (inline "Quality Assurance") `as` #name
+      :* Set (inline (Money 4000000)) `as` #budget)) OnConflictDoRaise (Returning_ #code)
+        
+
+-- | 17. Reduce the budget of all departments by 10%.
+ex17 :: Manipulation '[] DB '[] '[]
+ex17 = update_ #departments (Set (money `cast` ((numeric `cast` #budget) * 0.9)) `as` #budget) true
+
+-- | 18. Reassign all employees from the Research department (code 77) to the IT department (code 14).
+ex18 :: Manipulation '[] DB '[] '[]
+ex18 = update_ #employees (Set (inline (14 :: Int64)) `as` #department) (#department .== 77)
+
+-- | 19. Delete from the table all employees in the IT department (code 14).
+ex19 :: Manipulation '[] DB '[] '[]
+ex19 = deleteFrom #employees NoUsing (#department .== 14) (Returning_ Nil)
+
+-- | 20. Delete from the table all employees who work in departments with a
+-- budget greater than or equal to $60,000.
+ex20 :: Manipulation '[] DB '[] '[]
+ex20 = deleteFrom #employees (Using (table (#departments `as` #d))) 
+  (#d ! #budget .>= inline (Money 6000000) .&& #d ! #code .== #employees ! #department)
+  (Returning_ Nil)
+
+setup :: Migration Definition (Public '[]) DB
+setup = Migration
+  { name = pack "EmployeeManagement"
+  , migration = up
+  } where
+      up :: Definition (Public '[]) DB
+      up = createTable #departments
+           (serial8 `as` #code
+         :* notNullable text `as` #name
+         :* notNullable money `as` #budget)
+           (primaryKey #code `as` #pk_departments)
+       >>> createTable #employees
+           (notNullable int8 `as` #ssn
+         :* notNullable text `as` #name
+         :* notNullable text `as` #last_name
+         :* notNullable int8 `as` #department)
+           (primaryKey #ssn `as` #pk_employees
+         :* foreignKey #department #departments #code OnDeleteCascade OnUpdateCascade `as` #fk_department)
