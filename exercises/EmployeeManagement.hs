@@ -177,4 +177,18 @@ ex14 = with (q `as` #q)
              & groupBy (#d ! #code))
 
 -- | 15. Select the name and last name of employees working for departments with second lowest budget.
--- TODO
+ex15 :: Query '[] '[] DB '[]
+  '[ "first_name" ::: 'NotNull 'PGtext
+   , "last_name" ::: 'NotNull 'PGtext ]
+ex15 = with (q `as` #q)
+  (select_ (#e ! #name `as` #first_name
+         :* #e ! #last_name `as` #last_name)
+  (from (common #q
+        & innerJoin (table (#departments `as` #d)) (#d ! #code .== #q ! #department_code)
+        & innerJoin (table (#employees `as` #e)) (#e ! #department .== #d ! #code))))
+  where
+    q = select_ (#d ! #code `as` #department_code)
+        (from (table (#departments `as` #d))
+        & orderBy [Asc $ #d ! #budget]
+        & offset 1
+        & limit 1)
