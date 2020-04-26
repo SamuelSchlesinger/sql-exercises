@@ -85,7 +85,7 @@ ex6 :: Query '[] '[] DB '[]
    ]
 ex6
   = select_ (avg (All (int8 `cast` (#p ! #price))) `as` #average_product_price)
-    (from (table (#products `as` #p)) & groupBy (#p ! #code))
+    (from (table (#products `as` #p)) & groupBy Nil)
 
 -- | 7. Compute the average price of all products with manufacturer code equal to 2.
 ex7 :: Query '[] '[] DB '[]
@@ -93,7 +93,7 @@ ex7 :: Query '[] '[] DB '[]
    ]
 ex7
  = select_ (money `cast` avg (All (int8 `cast` (#p ! #price))) `as` #average_product_price)
-   (from (table (#products `as` #p)) & where_ (#p ! #manufacturer .== inline (2 :: Int64)) & groupBy (#p ! #code))
+   (from (table (#products `as` #p)) & where_ (#p ! #manufacturer .== inline (2 :: Int64)) & groupBy Nil)
 
 -- | 8. Compute the number of products with a price larger than or equal to $180.
 ex8 :: Query '[] '[] DB '[]

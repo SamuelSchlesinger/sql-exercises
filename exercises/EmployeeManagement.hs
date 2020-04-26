@@ -89,7 +89,7 @@ ex7 = select_ (#ssn :* #name :* #last_name :* #department)
 ex8 :: Query '[] '[] DB '[]
   '[ "sum_of_budgets" ::: 'Null 'PGmoney ]
 ex8 = select (sum_ (All $ #d ! #budget) `as` #sum_of_budgets)
-             (from (table (#departments `as` #d)) & groupBy (#d ! #code))
+             (from (table (#departments `as` #d)) & groupBy Nil)
 
 -- | 9. Select the number of employees in each department (you only need to
 -- show the department code and the number of employees).
@@ -160,7 +160,7 @@ ex13 = with (q `as` #q)
   where
     q = select_ ((money `cast` avg (All $ money `cast` (#d ! #budget))) `as` #average_budget)
       (from (table (#departments `as` #d))
-      & groupBy (#d ! #code))
+      & groupBy Nil)
 
 -- | 14. Select the names of departments with more than two employees.
 ex14 :: Query '[] '[] DB '[]

@@ -21,7 +21,8 @@ library
   exposed-modules:
     Shared,
     TheComputerStore, 
-    EmployeeManagement
+    EmployeeManagement,
+    TheWarehouse
   build-depends:
       aeson >= 1.4 && < 1.5
     , base >= 4.13 && < 5
